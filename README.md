@@ -1,5 +1,5 @@
 # 🌐 Web APIs with Python — Study Notes
-
+ 
 > **Topic:** Introduction to APIs  
 > **Author:** Daniel Nzioki Musyoka  
 
@@ -24,8 +24,21 @@
     - [✅ Using the `params` argument (recommended)](#-using-the-params-argument-recommended)
   - [9. HTTP Verbs](#9-http-verbs)
   - [10. Sending Data — POST, PUT \& DELETE](#10-sending-data--post-put--delete)
-  - [11. Key Takeaways](#11-key-takeaways)
+  - [11. Key Takeaways (Lecture 1 \& 2 — Intro + Request Anatomy)](#11-key-takeaways-lecture-1--2--intro--request-anatomy)
   - [Resources](#resources)
+  - [11. Headers \& Status Codes](#11-headers--status-codes)
+  - [12. HTTP Message Structure](#12-http-message-structure)
+  - [13. Status Codes](#13-status-codes)
+    - [The 5 Categories](#the-5-categories)
+    - [Most Important Status Codes](#most-important-status-codes)
+  - [14. Headers](#14-headers)
+    - [Content Negotiation Example](#content-negotiation-example)
+  - [15. Working with Headers \& Status Codes in requests](#15-working-with-headers--status-codes-in-requests)
+    - [Sending Request Headers](#sending-request-headers)
+    - [Reading Response Headers](#reading-response-headers)
+    - [Checking Status Codes](#checking-status-codes)
+  - [16. Key Takeaways](#16-key-takeaways)
+  - [Resources](#resources-1)
 
 ---
 
@@ -268,7 +281,7 @@ print(response.status_code)   # 200 means success
 
 ---
 
-## 11. Key Takeaways
+## 11. Key Takeaways (Lecture 1 & 2 — Intro + Request Anatomy)
 
 - An **API** is a contract between two systems defining how they can communicate.
 - **Web APIs** use HTTP — the same protocol as the browser.
@@ -288,6 +301,186 @@ print(response.status_code)   # 200 means success
 - [Python `requests` Documentation](https://docs.python-requests.org/en/latest/)
 - [Python `urllib` Documentation](https://docs.python.org/3/library/urllib.html)
 - [REST API Overview — MDN](https://developer.mozilla.org/en-US/docs/Glossary/REST)
+- [JSONPlaceholder — Free Fake REST API for testing](https://jsonplaceholder.typicode.com)
+
+---
+
+## 11. Headers & Status Codes
+
+Beyond just sending a request and reading a response, HTTP messages carry two additional layers of information: **headers** and **status codes**.
+
+- **Headers** → describe the message (metadata about the content)
+- **Status codes** → tell you whether the server handled the request correctly
+
+---
+
+## 12. HTTP Message Structure
+
+Both request and response messages share the same three-part structure:
+
+```
+┌──────────────────────────────────────────────┐
+│  START LINE                                  │
+│  (Request-line or Status-line)               │
+├──────────────────────────────────────────────┤
+│  HEADERS                                     │
+│  key: value pairs describing the message     │
+├──────────────────────────────────────────────┤
+│  BODY (optional)                             │
+│  the actual data payload                     │
+└──────────────────────────────────────────────┘
+```
+
+| Part | In a Request | In a Response |
+|------|-------------|---------------|
+| **Start Line** | Request-line: `GET /posts/1 HTTP/1.1` | Status-line: `HTTP/1.1 200 OK` |
+| **Headers** | e.g. `Accept: application/json` | e.g. `Content-Type: application/json` |
+| **Body** | Data payload (POST/PUT) | Returned resource/data |
+
+---
+
+## 13. Status Codes
+
+Status codes are **three-digit numbers** in the response start-line that tell you what happened on the server.
+
+### The 5 Categories
+
+| Range | Category | Meaning |
+|-------|----------|---------|
+| `1xx` | Informational | Request received, still processing |
+| `2xx` | Success | Request was received and processed correctly |
+| `3xx` | Redirection | Further action needed to complete the request |
+| `4xx` | Client Error | Something wrong with the request |
+| `5xx` | Server Error | Something went wrong on the server |
+
+### Most Important Status Codes
+
+| Code | Message | What It Means |
+|------|---------|---------------|
+| `200` | OK | ✅ Request was successful |
+| `404` | Not Found | ❌ The requested resource doesn't exist |
+| `500` | Internal Server Error | 🔥 Something broke on the server side |
+
+> 📖 Full list: [MDN HTTP Status Codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
+
+---
+
+## 14. Headers
+
+Headers are **key-value pairs** that describe the message being sent or received.
+
+```
+Content-Type: application/json
+Accept: application/json
+Date: Mon, 15 Jun 2026 10:00:00 GMT
+```
+
+- Keys are **case-insensitive**
+- Format: `Key: Value`
+- Used for **content negotiation** — client and server agree on the data format to use
+
+### Content Negotiation Example
+
+```
+Client → Server:   Accept: application/json        (I can handle JSON)
+Server → Client:   Content-Type: application/json  (I'm responding in JSON)
+```
+
+---
+
+## 15. Working with Headers & Status Codes in requests
+
+### Sending Request Headers
+
+Use the `headers` parameter (a dictionary) to attach headers to any request:
+
+```python
+import requests
+
+api = "https://jsonplaceholder.typicode.com/posts/1"
+
+# Tell the server we want a JSON response
+headers = {
+    "Accept": "application/json"
+}
+
+response = requests.get(api, headers=headers)
+print(response.text)
+```
+
+### Reading Response Headers
+
+The response object has a `.headers` attribute — a dictionary of all headers returned:
+
+```python
+import requests
+
+api = "https://jsonplaceholder.typicode.com/posts/1"
+response = requests.get(api)
+
+# Access all headers
+print(response.headers)
+
+# Access a specific header — using square brackets
+print(response.headers["Content-Type"])
+
+# Access a specific header — using .get() (safer, won't raise error if missing)
+print(response.headers.get("Content-Type"))
+```
+
+### Checking Status Codes
+
+```python
+import requests
+
+api = "https://jsonplaceholder.typicode.com/posts/1"
+response = requests.get(api)
+
+# Numeric status code
+print(response.status_code)          # 200
+
+# Using the built-in lookup object (no need to memorise numbers)
+print(requests.codes.ok)             # 200
+print(requests.codes.not_found)      # 404
+print(requests.codes.server_error)   # 500
+
+# Conditional check
+if response.status_code == requests.codes.ok:
+    print("Success! Processing response...")
+else:
+    print(f"Something went wrong: {response.status_code}")
+```
+
+> 💡 `requests.codes` is a handy lookup object — use readable names like `.ok`, `.not_found`, `.server_error` instead of raw numbers.
+
+---
+
+## 16. Key Takeaways
+
+- An **API** is a contract between two systems defining how they can communicate.
+- **Web APIs** use HTTP — the same protocol as the browser.
+- The three main Web API types are **SOAP**, **REST**, and **GraphQL**; REST is the most common.
+- In Python, use the **`requests`** library for clean, readable API calls.
+- `urllib` is built-in but requires more boilerplate code for the same result.
+- A **URL** has 5 components: protocol, domain, port, path, and query.
+- Use the `params` argument in `requests` to pass query parameters cleanly.
+- The 4 core **HTTP verbs** are GET (read), POST (create), PUT (update), DELETE (remove).
+- Use the `data` argument in `requests.post()` and `requests.put()` to send payloads.
+- HTTP messages have 3 parts: **start-line**, **headers**, and **body**.
+- **Status codes** indicate the outcome: `200` (OK), `404` (Not Found), `500` (Server Error).
+- **Headers** are key-value pairs used for content negotiation and metadata.
+- Use `response.headers` to read response headers and `response.status_code` for the status.
+- Use `requests.codes.<name>` to look up status codes without memorising numbers.
+
+---
+
+## Resources
+
+- [DataCamp — Intermediate Importing Data in Python](https://www.datacamp.com)
+- [Python `requests` Documentation](https://docs.python-requests.org/en/latest/)
+- [Python `urllib` Documentation](https://docs.python.org/3/library/urllib.html)
+- [REST API Overview — MDN](https://developer.mozilla.org/en-US/docs/Glossary/REST)
+- [HTTP Status Codes — MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 - [JSONPlaceholder — Free Fake REST API for testing](https://jsonplaceholder.typicode.com)
 
 ---
